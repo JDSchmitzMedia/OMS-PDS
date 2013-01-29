@@ -78,8 +78,8 @@ class PDSAuthorization(Authorization):
 
     def trustWrapper(self, profile):
         print "checking trust wrapper"
-        sharinglevel = self.getSharingLevel(profile)
-        print sharinglevel.level
+       # sharinglevel = self.getSharingLevel(profile)
+       # print sharinglevel.level
        # p0.role_owner.latest("id")
        # p0.role_owner.latest("id").name
        # p0.sharinglevel_owner.filter(isselected = True)
@@ -115,6 +115,7 @@ class PDSAuthorization(Authorization):
         try:
             if (self.audit_enabled):
                 #pdb.set_trace()
+		print "auditing"
                 audit_entry = AuditEntry(token = token)
                 audit_entry.method = request.method
 		scope_string = ""
