@@ -110,10 +110,11 @@ class SharingLevel(models.Model):
     isselected = models.BooleanField(default=False)
     datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="sharinglevel_owner")
 
-#class Tokens(Document):
-#    id = StringField(required=True)
-#    roles = ListField(ReferenceField(Role))
-#    datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="token_owner")
+class TokenRegistryEntry(models.Model):
+    token = models.IntegerField() #A token the user issued to a client via the authorization server.
+    purpose = models.ManyToManyField(Purpose) #
+    isselected = models.BooleanField(default=False)
+    datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="sharinglevel_owner")
 
 
 # Represents an audit of a request against the PDS
