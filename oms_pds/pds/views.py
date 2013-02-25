@@ -56,7 +56,6 @@ def initializeTrustWrapper(profile):
 
     p0 = Purpose(name="PDS", datastore_owner=profile)
     p0.save()
-    print p0
 
     s0 = SharingLevel(level = 0, datastore_owner=profile, isselected = True)
     s1 = SharingLevel(level = 1, datastore_owner=profile, isselected = False)
