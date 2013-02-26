@@ -32,7 +32,7 @@
 
 from tastypie.authorization import Authorization
 from oms_pds.authentication import OAuth2Authentication
-from oms_pds.pds.models import Profile, AuditEntry
+from oms_pds.pds.models import Profile, AuditEntry, ClientRegistryEntry, Role, Purpose, Scope
 
 import settings
 import pdb
@@ -43,6 +43,7 @@ class PDSAuthorization(Authorization):
     scopes = []
     requester_uuid = ""
     minimal_sharing_level = 0
+    resource_scope_name = None
     
     def requester(self):
         print self.requester_uuid
@@ -57,7 +58,7 @@ class PDSAuthorization(Authorization):
 #	   raise Exception("Too many sharing level objects selected.")
 	return sharinglevel
 
-    def get_userinfo_from_token(self, token):
+    def get_userinfo_from_token(self, token, datastore_owner_uuid, profile):
 	print 'get user info from token'
 	user_info = {}
         try:
@@ -68,19 +69,49 @@ class PDSAuthorization(Authorization):
 	    
             if user_info['status'] == 'error':
                 raise Exception(result['error'])
-	    self.requester_uuid = user_info['client']
+	    self.requester_uuid = user_info['client_id']
 	    self.scopes = user_info['scopes']
+	    client_re = None
+	    try:
+	        client_re = ClientRegistryEntry.objects.get(client_id=str(self.requester_uuid))
+	    except:
+                # client doesn't exist, create a new one, with default role + purpose.
+		#TODO: default values for pupose and group should be standardized and placed in a setting file.
+ 	        purpose, purpose_created = Purpose.objects.get_or_create(name="trustframework", datastore_owner=profile)
+                purpose.save()
+
+	        role, role_created = Role.objects.get_or_create(name="group", datastore_owner=profile, issharing=True)
+                role.save()
+
+	        client_re = ClientRegistryEntry(client_id=str(self.requester_uuid), role = role)
+		client.save()
+	    
 
         except Exception as ex:
             print ex
             return False
-        return user_info
+        return user_info, client_re
 
 
-    def trustWrapper(self, profile):
+    def trustWrapper(self, profile, client_re):
         print "checking trust wrapper"
+        print "resource_scope_name?  ",self.resource_scope_name
+        #Check the user's global sharing level
         sharinglevel = self.getSharingLevel(profile)
         print sharinglevel.level
+        if sharinglevel.level < self.minimal_sharing_level:
+            print "insufficient sharing level return false"
+            return False
+        if self.scope.issharing == False:
+            print "insufficient scope return false"
+            return False
+        if client_re.role.issharing == False:
+            return False
+
+        print "user's global sharing level: ",sharinglevel.level
+        #Check if the user is sharing with this client
+        
+
        # p0.role_owner.latest("id")
        # p0.role_owner.latest("id").name
        # p0.sharinglevel_owner.filter(isselected = True)
@@ -93,22 +124,33 @@ class PDSAuthorization(Authorization):
  
     def is_authorized(self, request, object=None):
         print "is authorized?"
-	_authorized = True
+        _authorized = True
         # Note: the trustwrapper must be run regardless of if auditting is enabled on this call or not
        
-	if request.REQUEST.has_key("datastore_owner__uuid"):
-	    print "has uuid"
-	else:
+        if request.REQUEST.has_key("datastore_owner__uuid"):
+            print "has uuid"
+        else:
 	    print "Missing ds uuid"
 	    raise Exception("Missing datastore_owner__uuid.  Please make sure it exists as a querystring parameter") 
         datastore_owner_uuid = request.REQUEST.get("datastore_owner__uuid")
         datastore_owner, ds_owner_created = Profile.objects.get_or_create(uuid = datastore_owner_uuid)
+
+        #TODO: default values for pupose and group should be standardized and placed in a setting file.
+        self.purpose, purpose_created = Purpose.objects.get_or_create(name=self.purpose_name, datastore_owner=datastore_owner)
+        if purpose_created:
+            self.purpose.save()
+
+        self.scope, scope_created = Scope.objects.get_or_create(name=self.resource_scope_name, datastore_owner=datastore_owner)
+        if scope_created:
+            self.scope.save()
+
         token = request.REQUEST["bearer_token"] if "bearer_token" in request.REQUEST else request.META["HTTP_BEARER_TOKEN"]
 
-	userinfo = self.get_userinfo_from_token(token)
-	print userinfo
-        self.trustWrapper(datastore_owner)
-        
+	# userinfo (primarily a list of scopes the token is authorized for), client_re (the pds registry for grants of authorization...is used user control post-grant-of-authorization).
+	userinfo, client_re = self.get_userinfo_from_token(token,datastore_owner_uuid, datastore_owner)
+        _authorized = self.trustWrapper(datastore_owner, client_re)
+	print "trust wrapper result: ", _authorized
+         
         # Result will be the uuid of the requesting party
         print self.requester_uuid
         try:
@@ -116,9 +158,9 @@ class PDSAuthorization(Authorization):
                 #pdb.set_trace()
                 audit_entry = AuditEntry(token = token)
                 audit_entry.method = request.method
-		scope_string = ""
+                scope_string = ""
 		for s in self.scopes:
-		    scope_string += str(s)+" "
+                    scope_string += str(s)+" "
                 audit_entry.scope = scope_string
                 audit_entry.purpose = request.REQUEST["purpose"] if "purpose" in request.REQUEST else ""
                 audit_entry.system_entity_toggle = request.REQUEST["system_entity"] if "system_entity" in request.REQUEST else False
@@ -131,14 +173,17 @@ class PDSAuthorization(Authorization):
         except Exception as e:
             print e
         
-	print 'is authorized?'
-	print _authorized
+        print 'is authorized?'
+        print _authorized
         return _authorized
 
-    def __init__(self, scope, audit_enabled = True, minimal_sharing_level = 0):
-        self.scope = scope
+    def __init__(self, scope, audit_enabled = True, minimal_sharing_level = 0, purpose_name = "trustframework"):
+        self.resource_scope_name = scope
         self.audit_enabled = audit_enabled
-	self.minimal_sharing_level = minimal_sharing_level
+        self.minimal_sharing_level = minimal_sharing_level
+	self.purpose_name = purpose_name
+
+
     
     # Optional but useful for advanced limiting, such as per user.
     # def apply_limits(self, request, object_list):

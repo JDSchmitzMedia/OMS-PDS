@@ -34,7 +34,7 @@ Institutional Innovation by Data Driven Design Inc
 
 {% extends "base.html" %}
 {% block content %}
-      <form action="/sharing/edit/?datastore_owner={{ datastore_owner }}" method="post">{% csrf_token %}
+      <form action="/sharing/edit/?datastore_owner__uuid={{ datastore_owner__uuid }}" method="post">{% csrf_token %}
 	{{ form.as_p }}
 	<input id="sharingsubmit" type="submit" value="Submit" />
       </form>
@@ -70,7 +70,7 @@ $('#sharingsubmit').parent().click(function() {
 	});
 
 	$.ajax({
-	        url: "/sharing/edit/?datastore_owner={{ datastore_owner }}",
+	        url: "/sharing/edit/?datastore_owner__uuid={{ datastore_owner__uuid }}",
 	        type: "post",
 	        data: JSON.stringify(data),
 	        // callback handler that will be called on success

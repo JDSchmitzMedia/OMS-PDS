@@ -69,11 +69,11 @@ def edit(request):
 		    pgs.issharing = json_input['selected']
     		    pgs.save()
     	        elif json_input.get('name') == 'roles':
-    	            role = Role.objects.get(name=json_input['value'], datastore_owner_id=datastore_owner)
+    	            role = Role.objects.get(name=json_input['value'], datastore_owner=p)
 		    role.issharing = json_input['selected']
     		    role.save()
     	        elif json_input.get('name') == 'sharinglevel':
-    	            sl = SharingLevel.objects.get(level=json_input['value'], datastore_owner_id=datastore_owner)
+    	            sl = SharingLevel.objects.get(level=json_input['value'], datastore_owner=p)
 		    sl.isselected = json_input['selected']
     		    sl.save()
 

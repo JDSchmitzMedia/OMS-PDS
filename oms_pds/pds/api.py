@@ -114,7 +114,7 @@ class AnswerListResource(MongoDBResource):
         resource_name = "answerlist"
         list_allowed_methods = ["delete", "get", "post"]
         help_text='resource help text...'
-        authorization = PDSAuthorization(scope = "funf_write", audit_enabled = True, minimal_sharing_level = 3)
+        authorization = PDSAuthorization(scope = "funf_write", audit_enabled = True, minimal_sharing_level = 3, purpose_name="trustframework")
         object_class = Document
         collection = "answerlist" # collection name
 

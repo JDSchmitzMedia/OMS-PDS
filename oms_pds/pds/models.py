@@ -91,7 +91,7 @@ class Purpose(models.Model):
 class Scope(models.Model):
     name = models.CharField(max_length=120)
     purpose = models.ManyToManyField(Purpose)
-    issharing = models.BooleanField(default=False)
+    issharing = models.BooleanField(default=True)
     datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="scope_owner")
 
 class Role(models.Model):
@@ -110,11 +110,20 @@ class SharingLevel(models.Model):
     isselected = models.BooleanField(default=False)
     datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="sharinglevel_owner")
 
-class TokenRegistryEntry(models.Model):
-    token = models.IntegerField() #A token the user issued to a client via the authorization server.
-    purpose = models.ManyToManyField(Purpose) #
-    isselected = models.BooleanField(default=False)
-    datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="sharinglevel_owner")
+class ClientRegistryEntry(models.Model):
+    # Version 0.5 method for controlling access to data.
+    client_id = models.CharField(max_length=120)
+    client_name = models.CharField(max_length=120)
+    role = models.ForeignKey(Role, blank = False, null = False, related_name="client_role")
+
+#TODO: More UMA-esque...to be re-evaluted after OIDC integration and v0.5.  For now use ClientReg...
+#class TokenRegistryEntry(models.Model):
+#    # This serves as a cache for entries of oauth tokens existing in the AuthorizationServer.
+#    token = models.CharField(max_length=120) #A token the user issued to a client via the authorization server.
+#    client = models.CharField(max_length=120)
+#    role = models.ForeignKey(Profile, blank = False, null = False, related_name="client_role")
+#    isrevoked = models.BooleanField(default=False)
+    
 
 
 # Represents an audit of a request against the PDS
