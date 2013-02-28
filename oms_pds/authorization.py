@@ -68,7 +68,7 @@ class PDSAuthorization(Authorization):
 	    user_info = r.json()
 	    
             if user_info['status'] == 'error':
-                raise Exception(result['error'])
+                raise Exception(user_info['message'])
 	    self.requester_uuid = user_info['client_id']
 	    self.scopes = user_info['scopes']
 	    client_re = None
@@ -149,9 +149,14 @@ class PDSAuthorization(Authorization):
         token = request.REQUEST["bearer_token"] if "bearer_token" in request.REQUEST else request.META["HTTP_BEARER_TOKEN"]
 
 	# userinfo (primarily a list of scopes the token is authorized for), client_re (the pds registry for grants of authorization...is used user control post-grant-of-authorization).
-	userinfo, client_re = self.get_userinfo_from_token(token,datastore_owner_uuid, datastore_owner)
-        _authorized = self.trustWrapper(datastore_owner, client_re)
-	print "trust wrapper result: ", _authorized
+        try:
+	    userinfo, client_re = self.get_userinfo_from_token(token,datastore_owner_uuid, datastore_owner)
+	    print "calling trust wrapper"
+            _authorized = self.trustWrapper(datastore_owner, client_re)
+	    print "trust wrapper result: ", _authorized
+        except Exception as ex:
+            print "failed to get userinfo from token"
+            _authorized = False
          
         # Result will be the uuid of the requesting party
         print self.requester_uuid
