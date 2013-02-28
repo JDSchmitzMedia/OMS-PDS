@@ -158,6 +158,7 @@ class PDSAuthorization(Authorization):
         try:
             if (self.audit_enabled):
                 #pdb.set_trace()
+		print "auditing"
                 audit_entry = AuditEntry(token = token)
                 audit_entry.method = request.method
                 scope_string = ""
