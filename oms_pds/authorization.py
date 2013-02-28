@@ -84,7 +84,7 @@ class PDSAuthorization(Authorization):
                 role.save()
 
 	        client_re = ClientRegistryEntry(client_id=str(self.requester_uuid), role = role)
-		client.save()
+		client_re.save()
 	    
 
         except Exception as ex:
@@ -96,14 +96,16 @@ class PDSAuthorization(Authorization):
     def trustWrapper(self, profile, client_re):
         print "checking trust wrapper"
         print "resource_scope_name?  ",self.resource_scope_name
+
         #Check the user's global sharing level
         sharinglevel = self.getSharingLevel(profile)
+
         print sharinglevel.level
         if sharinglevel.level < self.minimal_sharing_level:
             print "insufficient sharing level return false"
             return False
         if self.scope.issharing == False:
-            print "insufficient scope return false"
+            print "not sharing this scope return 0 as result"
             return False
         if client_re.role.issharing == False:
             return False

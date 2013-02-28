@@ -85,7 +85,9 @@ class AnswerResource(MongoDBResource):
     def dehydrate(self, bundle):
         # Since there's no backing model here, tastypie for some reason doesn't fill in the necessary fields on the data
         # As a result, this must be done manually
+	print "dehydrate:"
 	print bundle.data
+	print self.Meta.authorization.scopes
 	
 	if not bundle.data['key'] in self.Meta.authorization.scopes:
 	    print "removing", bundle.data
@@ -99,7 +101,7 @@ class AnswerResource(MongoDBResource):
         list_allowed_methods = ["delete", "get", "post"]
         help_text='resource help text...'
 #        authentication = OAuth2Authentication("funf_write")
-        authorization = PDSAuthorization(scope = "trustframework", audit_enabled = True, minimal_sharing_level = 3)
+        authorization = PDSAuthorization(scope = "funf", audit_enabled = True, minimal_sharing_level = 1)
         object_class = Document
         collection = "answer" # collection name
 
