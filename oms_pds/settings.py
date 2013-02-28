@@ -42,11 +42,8 @@ TEMPLATE_DEBUG = DEBUG
 MONGODB_HOST = None
 MONGODB_PORT = None
 MONGODB_DATABASE = 'pds'
-<<<<<<< HEAD
 SERVER_OMS_REGISTRY='127.0.0.1:8040'
-=======
-SERVER_OMS_REGISTRY='celldata.media.mit.edu'
->>>>>>> c603d0626bb4513597fb09562cb107d9ad72ac8a
+#SERVER_OMS_REGISTRY='celldata.media.mit.edu'
 AUDIT_COLLECTION = 'auditentry'
 #SERVER_OMS_REGISTRY='localhost:8001'
 USE_MULTIPDS = True
