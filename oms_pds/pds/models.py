@@ -35,8 +35,13 @@ from django.db import models
 from django.db.models import signals
 from mongoengine import *
 
-connect(settings.MONGODB_DATABASE)
+from datetime import timedelta
+from datetime import *
 
+from django.contrib.auth.models import User
+from django.contrib import admin
+
+connect(settings.MONGODB_DATABASE)
 
 class Profile(models.Model):
     uuid = models.CharField(max_length=36, unique=True, blank = False, null = False, db_index = True)
@@ -68,7 +73,7 @@ def create_tw(sender, instance, created, **kwargs):
         s2.save()
         s3.save()
         instance.isinit = True;
-	instance.save()
+        instance.save()
 
 signals.post_save.connect(create_tw, sender=Profile)
 
@@ -91,20 +96,42 @@ class Purpose(models.Model):
 class Scope(models.Model):
     name = models.CharField(max_length=120)
     purpose = models.ManyToManyField(Purpose)
-    issharing = models.BooleanField(default=True)
+    #issharing = models.BooleanField(default=True)
     datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="scope_owner")
 
+class PersonalScopeSetting(models.Model):
+    # TODO: Enable TrustWrapper2 with scopesetting model.
+    sharing_level = models.IntegerField()
+    scope = models.ForeignKey(Scope)
+    def __init__(self, sharing_level, scope_name, datastore_owner_profile):
+        sharing_level = sharing_level
+        new_scope, is_created = Scope.objects.get_or_create(name=scope_name,  datastore_owner=datastore_owner_profile)
+        super(PersonalScopeSetting, self).__init__(sharing_level=sharing_level, scope=new_scope)
+        print "init PersonalScopeSetting"
+
 class Role(models.Model):
-    """ @name : The user defined name of the role
-        @purpose : A list of purposes associated with this role
-        @tokens : A list of oauth tokens of users assigned to this role """
+    ''' @name : The user defined name of the role
+         '''
     name = models.CharField(max_length=120)
-    purpose = models.ManyToManyField(Purpose)
+    # purpose = models.ManyToManyField(Purpose)
     issharing = models.BooleanField(default=False)
     datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="role_owner")
-    # TODO: fill in field for tokens (rather than ints / uuids)
+    # TODO: Enable TrustWrapper2 with scope sharing settings for each role.
+    scopes = models.ManyToManyField(PersonalScopeSetting)
+
+    # TODO: Initialize PersonalScopeSettings for newly created role
+    def __init__(self, name, issharing, datastore_owner_profile):
+        # TODO: For each scope that exists, create a PersonalScopeSetting to map role->scope
+        
+        super(Role, self).__init__(name=name,issharing=True, datastore_owner=datastore_owner_profile) 
+        for s in Scope.objects.all():
+            print s.name
+            pss = PersonalScopeSetting(sharing_level=0, scope_name=s.name, datastore_owner_profile=datastore_owner_profile)
+            pss.save()
 
 class SharingLevel(models.Model):
+    # TODO: Enable TrustWrapper2 with scope sharing settings for each role.
+    scopes = models.ManyToManyField(PersonalScopeSetting)
     level = models.IntegerField()
     purpose = models.ManyToManyField(Purpose)
     isselected = models.BooleanField(default=False)
@@ -146,3 +173,5 @@ class AuditEntry(models.Model):
     
     def __unicode__(self):
         self.pk
+
+

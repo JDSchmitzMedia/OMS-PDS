@@ -58,43 +58,73 @@ class PDSAuthorization(Authorization):
 #	   raise Exception("Too many sharing level objects selected.")
 	return sharinglevel
 
+    def create_client_registry_entry(self, profile):
+        #Each OAuth client is "registered" in the user's PDS.  The client's registry information is used to make trust wrapper authorization decisions.
+
+        #TODO: default values for pupose and group should be standardized and placed in a setting file.
+
+        # Get or create a default purpose
+        purpose, purpose_created = Purpose.objects.get_or_create(name="trustframework", datastore_owner=profile)
+        purpose.save()
+        
+        # Get or create a default role
+        role, role_created = Role.objects.get_or_create(name="group", datastore_owner=profile, issharing=True)
+        role.save()
+
+        client_re = ClientRegistryEntry(client_id=str(self.requester_uuid), role = role)
+        client_re.save()
+        
+        return client_re
+
+    def call_auth_server_token_introspection(self, token):
+        # Make a call to the Authorization Server
+        r = requests.get("http://"+settings.SERVER_OMS_REGISTRY+"/get_key_from_token?bearer_token="+str(token))
+        
+
+        return r.json()
+
+    def extract_user_info(self, auth_server_response):
+        #Extract the relevant information from the authorization server's token introspection response
+        if auth_server_response['status'] == 'error':
+            raise Exception(auth_server_response['message'])
+
+        self.requester_uuid = auth_server_response['client_id']
+        #the collection of both resource and answer scopes
+        self.scopes = auth_server_response['scopes']
+
+
     def get_userinfo_from_token(self, token, datastore_owner_uuid, profile):
-	print 'get user info from token'
-	user_info = {}
+        #The function makes calls back to the Authorization server to for token introspection.  Token information is acquired from the Authorization server, and used by the PDS to make authorization choices.  
+        # params
+        #   token: the oauth token included in the http request
+        #   datastore_owner_uuid: the owner of the data.  This is used to enable multiple personal data stores on one web service(python project).
+        #   profile: the user's profile settings.  The main information held in the profile is links to trust wrapper(user defined run-time settings).
+
+        print 'get user info from token'
+        user_info = {}
+        client_re = None
+
         try:
-	    print settings.SERVER_OMS_REGISTRY
-            r = requests.get("http://"+settings.SERVER_OMS_REGISTRY+"/get_key_from_token?bearer_token="+str(token))
-	    print r.json()
-	    user_info = r.json()
+            # Make a call to the Authorization Server
+            user_info = self.call_auth_server_token_introspection(token)
+            self.extract_user_info(user_info)
 	    
-            if user_info['status'] == 'error':
-                raise Exception(user_info['message'])
-	    self.requester_uuid = user_info['client_id']
-	    self.scopes = user_info['scopes']
-	    client_re = None
-	    try:
+            try:
 	        client_re = ClientRegistryEntry.objects.get(client_id=str(self.requester_uuid))
-	    except:
+            except:
                 # client doesn't exist, create a new one, with default role + purpose.
-		#TODO: default values for pupose and group should be standardized and placed in a setting file.
- 	        purpose, purpose_created = Purpose.objects.get_or_create(name="trustframework", datastore_owner=profile)
-                purpose.save()
-
-	        role, role_created = Role.objects.get_or_create(name="group", datastore_owner=profile, issharing=True)
-                role.save()
-
-	        client_re = ClientRegistryEntry(client_id=str(self.requester_uuid), role = role)
-		client_re.save()
-	    
+                client_re = self.create_client_registry_entry(profile)
 
         except Exception as ex:
             print ex
             return False
+
         return user_info, client_re
 
 
     def trustWrapper(self, profile, client_re):
         print "checking trust wrapper"
+        #the scope required to access a resource for either answering questions or retrieving raw data.
         print "resource_scope_name?  ",self.resource_scope_name
 
         #Check the user's global sharing level
@@ -104,6 +134,7 @@ class PDSAuthorization(Authorization):
         if sharinglevel.level < self.minimal_sharing_level:
             print "insufficient sharing level return false"
             return False
+        #Each scope should 
         if self.scope.issharing == False:
             print "not sharing this scope return 0 as result"
             return False
@@ -112,23 +143,34 @@ class PDSAuthorization(Authorization):
 
         print "user's global sharing level: ",sharinglevel.level
         #Check if the user is sharing with this client
-        
 
-       # p0.role_owner.latest("id")
-       # p0.role_owner.latest("id").name
-       # p0.sharinglevel_owner.filter(isselected = True)
-       # p0.sharinglevel_owner.filter(isselected = True).level
-       # sl = p0.sharinglevel_owner.first(isselected = True)
-       # sl = p0.sharinglevel_owner.filter(isselected = True)
-       # sl.latest("id")
-       # sl.latest("id").level
-	return True
+        return True
+
+    def trustWrapper2(self, uuid, client_re):
+        # client_re.scope("movement").level
+        # client_re.scope("communication").level
+        role = client_re.role
+        print uuid
+        my_scope = Scope.objects.get_or_create(name="focus", datastore_owner_id=uuid)
+        print "checking trustWrapper2"
+        my_scope_settings = role.scopes.get_or_create(scope=my_scope)
+	print my_scope_settings
+	my_scope_settings.level
+
+        print "checking issharing "
+        if role.issharing == False:
+            return False
+
+        print "checking sharing level"
+        if my_scope_setttings.level < self.minimal_sharing_level:
+            return False
+
+        return True
  
     def is_authorized(self, request, object=None):
         print "is authorized?"
         _authorized = True
-        # Note: the trustwrapper must be run regardless of if auditting is enabled on this call or not
-       
+        # Note: the trustwrapper must be run regardless of whether or not auditting is enabled       
         if request.REQUEST.has_key("datastore_owner__uuid"):
             print "has uuid"
         else:
@@ -152,7 +194,8 @@ class PDSAuthorization(Authorization):
         try:
 	    userinfo, client_re = self.get_userinfo_from_token(token,datastore_owner_uuid, datastore_owner)
 	    print "calling trust wrapper"
-            _authorized = self.trustWrapper(datastore_owner, client_re)
+            #_authorized = self.trustWrapper(datastore_owner, client_re)
+            _authorized = self.trustWrapper2(datastore_owner_uuid, client_re)
 	    print "trust wrapper result: ", _authorized
         except Exception as ex:
             print "failed to get userinfo from token"
@@ -185,18 +228,11 @@ class PDSAuthorization(Authorization):
         print _authorized
         return _authorized
 
+
     def __init__(self, scope, audit_enabled = True, minimal_sharing_level = 0, purpose_name = "trustframework"):
         self.resource_scope_name = scope
         self.audit_enabled = audit_enabled
         self.minimal_sharing_level = minimal_sharing_level
 	self.purpose_name = purpose_name
 
-
-    
-    # Optional but useful for advanced limiting, such as per user.
-    # def apply_limits(self, request, object_list):
-    #    if request and hasattr(request, 'user'):
-    #        return object_list.filter(author__username=request.user.username)
-    #
-    #    return object_list.none()
 

@@ -44,6 +44,7 @@ from tastypie.authorization import Authorization
 from tastypie.validation import Validation
 from oms_pds.tastypie_mongodb.resources import MongoDBResource, Document
 from oms_pds.pds.models import AuditEntry, Profile, SharingLevel, Role, Purpose, Scope
+from oms_pds.mtl_pds.models import Sms, MTLUser, Cluster, Timeslot, Poilabel, Poi, Userpoi, Feedback, Point, CallLog, RunningApp, Bluetooth
 from django.db import models
 
 import pdb
@@ -252,6 +253,4 @@ class AuditEntryResource(ModelResource):
                       "requester": ALL_WITH_RELATIONS }
         ordering = ('timestamp')
         limit = 20
-    
-
 
