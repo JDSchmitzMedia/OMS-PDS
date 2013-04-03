@@ -43,41 +43,42 @@ from django.contrib import admin
 
 connect(settings.MONGODB_DATABASE)
 
+DEFAULT_PURPOSE = "TrustFramework"
+DEFAULT_ROLE = "default"
+
 class Profile(models.Model):
     uuid = models.CharField(max_length=36, unique=True, blank = False, null = False, db_index = True)
     isinit = models.BooleanField(default=False)
+admin.site.register(Profile)
 
+class Role(models.Model):
+    ''' @name : The user defined name of the role
+         '''
+    name = models.CharField(max_length=120)
+    issharing = models.BooleanField(default=False)
+    datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="role_owner")
+admin.site.register(Role)
 
-def create_tw(sender, instance, created, **kwargs):
-    # Check if the trust wrapper has been initialized.  Note: this may need to be a callback to a authrorization server for default values at some point... 
-    print instance.isinit
-    if instance.isinit == False:
-        p0 = Purpose(name="PDS", datastore_owner=instance)
-        p0.save()
-        s0 = SharingLevel(level = 0, datastore_owner=instance, isselected = True)
-        s1 = SharingLevel(level = 1, datastore_owner=instance, isselected = False)
-        s2 = SharingLevel(level = 2, datastore_owner=instance, isselected = False)
-        s3 = SharingLevel(level = 3, datastore_owner=instance, isselected = False)
-        s0.save()
-        s1.save()
-        s2.save()
-        s3.save()
-        # Mapping each sharing level to the purpose PDS
-        s0.purpose = [p0]
-        s1.purpose = [p0]
-        s2.purpose = [p0]
-        s3.purpose = [p0]
-        # we need to save the sharing levels twice, becuse the act of saving creates the primary key necessary to map sharing level to purpose
-        s0.save()
-        s1.save()
-        s2.save()
-        s3.save()
-        instance.isinit = True;
-        instance.save()
+class Purpose(models.Model):
+    name = models.CharField(max_length=120)
+#    datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="purpose_owner")
+admin.site.register(Purpose)
 
-signals.post_save.connect(create_tw, sender=Profile)
+class Scope(models.Model):
+    # Globally defined.  Each user(profile) should have PersonalAnswerSettings for each scope.
+    name = models.CharField(max_length=120)
+    purpose = models.ManyToManyField(Purpose)
+admin.site.register(Scope)
+        
+class PersonalAnswerSetting(models.Model):
+    # TODO: Enable TrustWrapper2 with scopesetting model.
+    sharing_level = models.IntegerField()
+    scope = models.ForeignKey(Scope)
+    role = models.ForeignKey(Role, related_name="personal_answer_settings")
+    purpose = models.ManyToManyField(Purpose)
+    #datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="scope_owner")
+admin.site.register(PersonalAnswerSetting)
 
-    
 class ResourceKey(models.Model):
     ''' A way of controlling sharing within a collection.  Maps to any key within a collection.  For example, funf probes and individual answers to questions'''
     key = models.CharField(max_length=120)
@@ -89,49 +90,9 @@ class ProbeGroupSetting(models.Model):
     issharing = models.BooleanField(default=False)
     keys = models.ManyToManyField(ResourceKey) #a list of roles the user is currently sharing with
 
-class Purpose(models.Model):
-    name = models.CharField(max_length=120)
-    datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="purpose_owner")
-
-class Scope(models.Model):
-    name = models.CharField(max_length=120)
-    purpose = models.ManyToManyField(Purpose)
-    #issharing = models.BooleanField(default=True)
-    datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="scope_owner")
-
-class PersonalScopeSetting(models.Model):
-    # TODO: Enable TrustWrapper2 with scopesetting model.
-    sharing_level = models.IntegerField()
-    scope = models.ForeignKey(Scope)
-    def __init__(self, sharing_level, scope_name, datastore_owner_profile):
-        sharing_level = sharing_level
-        new_scope, is_created = Scope.objects.get_or_create(name=scope_name,  datastore_owner=datastore_owner_profile)
-        super(PersonalScopeSetting, self).__init__(sharing_level=sharing_level, scope=new_scope)
-        print "init PersonalScopeSetting"
-
-class Role(models.Model):
-    ''' @name : The user defined name of the role
-         '''
-    name = models.CharField(max_length=120)
-    # purpose = models.ManyToManyField(Purpose)
-    issharing = models.BooleanField(default=False)
-    datastore_owner = models.ForeignKey(Profile, blank = False, null = False, related_name="role_owner")
-    # TODO: Enable TrustWrapper2 with scope sharing settings for each role.
-    scopes = models.ManyToManyField(PersonalScopeSetting)
-
-    # TODO: Initialize PersonalScopeSettings for newly created role
-    def __init__(self, name, issharing, datastore_owner_profile):
-        # TODO: For each scope that exists, create a PersonalScopeSetting to map role->scope
-        
-        super(Role, self).__init__(name=name,issharing=True, datastore_owner=datastore_owner_profile) 
-        for s in Scope.objects.all():
-            print s.name
-            pss = PersonalScopeSetting(sharing_level=0, scope_name=s.name, datastore_owner_profile=datastore_owner_profile)
-            pss.save()
-
 class SharingLevel(models.Model):
     # TODO: Enable TrustWrapper2 with scope sharing settings for each role.
-    scopes = models.ManyToManyField(PersonalScopeSetting)
+    scopes = models.ManyToManyField(PersonalAnswerSetting)
     level = models.IntegerField()
     purpose = models.ManyToManyField(Purpose)
     isselected = models.BooleanField(default=False)
@@ -175,3 +136,48 @@ class AuditEntry(models.Model):
         self.pk
 
 
+def create_profile(sender, instance, created, **kwargs):
+    # TODO Create a set of personalanswersettings for the profile
+    if created:
+        role = Role(name=DEFAULT_ROLE, issharing=True, datastore_owner=instance)
+        role.save()
+
+def create_scope(sender, instance, created, **kwargs):
+    if created:
+        if instance.purpose.all().count() == 0:
+            purpose, is_created = Purpose.objects.get_or_create(name=DEFAULT_PURPOSE)
+            if is_created:
+                purpose.save()
+            instance.purpose.add(purpose)
+            instance.save()
+        profile_list = Profile.objects.all()
+        for profile in profile_list: 
+            for role in profile.role_owner.all():
+                purpose, is_created = Purpose.objects.get_or_create(name=DEFAULT_PURPOSE)
+                if is_created:
+                    purpose.save()
+                pas = PersonalAnswerSetting(scope=instance, sharing_level=0, role=role)
+                pas.save()
+                pas.purpose.add(purpose)
+                pas.save()
+
+def create_role(sender, instance, created, **kwargs):
+    # TODO Create a set of personalanswersettings for the profile
+    scopes = Scope.objects.all()
+    purpose, is_created = Purpose.objects.get_or_create(name=DEFAULT_PURPOSE)
+    if is_created:
+        purpose.save()
+    if created:
+        for scope in scopes:
+            print scope.name
+            print "creating new personal answer setting"
+            pas = PersonalAnswerSetting(scope=scope, sharing_level=0, role=instance)
+            pas.save()
+            pas.purpose.add(purpose)
+            pas.save()
+            instance.personal_answer_settings.add(pas)
+            instance.save()
+
+signals.post_save.connect(create_role, sender=Role)
+signals.post_save.connect(create_scope, sender=Scope)
+signals.post_save.connect(create_profile, sender=Profile)
