@@ -33,13 +33,20 @@
 from django.http import HttpResponse
 import json
 from django.template import RequestContext
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 import settings
 import httplib
 from django import forms
+from django.forms import ModelForm
 import json
 from oms_pds.forms.settingsforms import PermissionsForm, Purpose_Form
-from oms_pds.pds.models import Scope, Purpose, Role, SharingLevel
+from oms_pds.pds.models import Scope, Purpose, Role, SharingLevel, PersonalAnswerSetting, Profile
+
+from oms_pds.pds.models import PersonalAnswerSetting
+class PersonalAnswerSettingForm(ModelForm):
+    class Meta:
+        model = PersonalAnswerSetting
+
 
 def purpose(request):
     form = Purpose_Form()
@@ -47,6 +54,40 @@ def purpose(request):
     template = get_datastore_owner(template, request)
 
     return render_to_response('purpose.html',
+        template,
+        RequestContext(request))
+
+def editpas(request, id):
+
+    print "edit personal answer setting"
+    if request.method == 'POST':
+        instance = get_object_or_404(PersonalAnswerSetting, id=id)
+        form = PersonalAnswerSettingForm(request.POST, instance=instance)
+        if form.is_valid():
+            print "form is valid"
+            print form.cleaned_data
+            form.save()
+            return redirect('/')
+            
+            #form.save()
+    pers = PersonalAnswerSetting.objects.get(pk=id)
+    print "pers", pers
+    pas_form = PersonalAnswerSettingForm(instance=pers)
+    print "pers", pers
+    return render_to_response('editpas.html',{'form': pas_form}, RequestContext(request))
+
+def sharing(request):
+    pers = PersonalAnswerSetting.objects.all()
+    print pers.count()
+    p = Profile.objects.all()
+    p0 = p[0]
+    roles = p0.role_owner.all()
+    #[<Role: Role object>]
+    #template = {"personal_answer_settings":PersonalAnswerSetting.objects.all()}
+    template = {"roles":roles}
+    template = get_datastore_owner(template, request)
+
+    return render_to_response('sharing.html',
         template,
         RequestContext(request))
 

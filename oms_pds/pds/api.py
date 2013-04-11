@@ -44,7 +44,7 @@ from tastypie.authorization import Authorization
 from tastypie.validation import Validation
 from oms_pds.tastypie_mongodb.resources import MongoDBResource, Document
 from oms_pds.pds.models import AuditEntry, Profile, SharingLevel, Role, Purpose, Scope
-from oms_pds.mtl_pds.models import Sms, MTLUser, Cluster, Timeslot, Poilabel, Poi, Userpoi, Feedback, Point, CallLog, RunningApp, Bluetooth
+#from oms_pds.mtl_pds.models import Sms, MTLUser, Cluster, Timeslot, Poilabel, Poi, Userpoi, Feedback, Point, CallLog, RunningApp, Bluetooth
 from django.db import models
 
 import pdb
@@ -58,7 +58,7 @@ class FunfResource(MongoDBResource):
 
     class Meta:
 #        authentication = OAuth2Authentication("funf_write")
-        authorization = PDSAuthorization(scope = "funf_write", audit_enabled = True, minimal_sharing_level = 1)
+        authorization = PDSAuthorization(scope = "funf_write", audit_enabled = True, minimal_sharing_level = 0)
         resource_name = "funf"
         list_allowed_methods = ["delete", "get", "post"]
 #        authorization = Authorization()

@@ -33,7 +33,7 @@
 #from tastytools.api import Api
 from tastypie.api import Api
 from oms_pds.pds.api import FunfResource, FunfConfigResource, RoleResource, PurposeResource, AnswerResource, AnswerListResource, AuditEntryResource, AuditEntryCountResource, ScopeResource, SharingLevelResource, ProfileResource 
-from oms_pds.mtl_pds.api import SmsResource, MTLUserResource, ClusterResource, TimeslotResource, PoilabelResource, PoiResource, UserpoiResource, FeedbackResource, PointResource, CallLogResource, RunningAppResource, BluetoothResource
+#from oms_pds.mtl_pds.api import SmsResource, MTLUserResource, ClusterResource, TimeslotResource, PoilabelResource, PoiResource, UserpoiResource, FeedbackResource, PointResource, CallLogResource, RunningAppResource, BluetoothResource
 
 v1_api = Api(api_name='personal_data')
 v1_api.register(FunfResource())
@@ -49,16 +49,16 @@ v1_api.register(AuditEntryResource())
 v1_api.register(AuditEntryCountResource())
 
 
-v1_api.register(SmsResource())
-v1_api.register(MTLUserResource())
-v1_api.register(ClusterResource())
-v1_api.register(ClusterResource())
-v1_api.register(TimeslotResource())
-v1_api.register(PoilabelResource())
-v1_api.register(PoiResource())
-v1_api.register(UserpoiResource())
-v1_api.register(FeedbackResource())
-v1_api.register(PointResource())
-v1_api.register(CallLogResource())
-v1_api.register(RunningAppResource())
-v1_api.register(BluetoothResource())
+#v1_api.register(SmsResource())
+#v1_api.register(MTLUserResource())
+#v1_api.register(ClusterResource())
+#v1_api.register(ClusterResource())
+#v1_api.register(TimeslotResource())
+#v1_api.register(PoilabelResource())
+#v1_api.register(PoiResource())
+#v1_api.register(UserpoiResource())
+#v1_api.register(FeedbackResource())
+#v1_api.register(PointResource())
+#v1_api.register(CallLogResource())
+#v1_api.register(RunningAppResource())
+#v1_api.register(BluetoothResource())

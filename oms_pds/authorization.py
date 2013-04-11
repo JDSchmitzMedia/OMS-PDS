@@ -37,6 +37,7 @@ from oms_pds.pds.models import Profile, AuditEntry, ClientRegistryEntry, Role, P
 import settings
 import pdb
 import requests
+import json
 
 class PDSAuthorization(Authorization):
     audit_enabled = True
@@ -64,7 +65,7 @@ class PDSAuthorization(Authorization):
         #TODO: default values for pupose and group should be standardized and placed in a setting file.
 
         # Get or create a default purpose
-        purpose, purpose_created = Purpose.objects.get_or_create(name="trustframework", datastore_owner=profile)
+        purpose, purpose_created = Purpose.objects.get_or_create(name="trustframework")
         purpose.save()
         
         # Get or create a default role
@@ -79,12 +80,13 @@ class PDSAuthorization(Authorization):
     def call_auth_server_token_introspection(self, token):
         # Make a call to the Authorization Server
         r = requests.get("http://"+settings.SERVER_OMS_REGISTRY+"/get_key_from_token?bearer_token="+str(token))
-        
+        print "response: ", r.encoding
 
-        return r.json()
+        return json.loads(r.text)
 
     def extract_user_info(self, auth_server_response):
         #Extract the relevant information from the authorization server's token introspection response
+        print "extracting userinfo"
         if auth_server_response['status'] == 'error':
             raise Exception(auth_server_response['message'])
 
@@ -107,9 +109,11 @@ class PDSAuthorization(Authorization):
         try:
             # Make a call to the Authorization Server
             user_info = self.call_auth_server_token_introspection(token)
+            print "user info: ",user_info
             self.extract_user_info(user_info)
 	    
             try:
+                # Currently client_id and requester_id are the same.
 	        client_re = ClientRegistryEntry.objects.get(client_id=str(self.requester_uuid))
             except:
                 # client doesn't exist, create a new one, with default role + purpose.
@@ -122,51 +126,24 @@ class PDSAuthorization(Authorization):
         return user_info, client_re
 
 
-    def trustWrapper(self, profile, client_re):
-        print "checking trust wrapper"
-        #the scope required to access a resource for either answering questions or retrieving raw data.
-        print "resource_scope_name?  ",self.resource_scope_name
+    def trustWrapper(self, uuid, requester_id, client_re):
+        role = client_re.role 
+        my_scope, my_scope_created = Scope.objects.get_or_create(name=self.resource_scope_name)
+        if my_scope_created:
+           my_scope.save()
+        # role.scopes.get_or_create (returns a scope setting object) 
+        pas, pas_created = role.personal_answer_settings.get_or_create(scope=my_scope)
+        if pas_created:
+           pas.save()
 
-        #Check the user's global sharing level
-        sharinglevel = self.getSharingLevel(profile)
-
-        print sharinglevel.level
-        if sharinglevel.level < self.minimal_sharing_level:
-            print "insufficient sharing level return false"
-            return False
-        #Each scope should 
-        if self.scope.issharing == False:
-            print "not sharing this scope return 0 as result"
-            return False
-        if client_re.role.issharing == False:
-            return False
-
-        print "user's global sharing level: ",sharinglevel.level
-        #Check if the user is sharing with this client
-
+        if role.issharing == False: 
+           print "not sharing with this role", role.name
+           return False
+        if pas.sharing_level < self.minimal_sharing_level: 
+           print "personal answer sharing level is insufficient", pas.sharing_level
+           return False
         return True
 
-    def trustWrapper2(self, uuid, client_re):
-        # client_re.scope("movement").level
-        # client_re.scope("communication").level
-        role = client_re.role
-        print uuid
-        my_scope = Scope.objects.get_or_create(name="focus", datastore_owner_id=uuid)
-        print "checking trustWrapper2"
-        my_scope_settings = role.scopes.get_or_create(scope=my_scope)
-	print my_scope_settings
-	my_scope_settings.level
-
-        print "checking issharing "
-        if role.issharing == False:
-            return False
-
-        print "checking sharing level"
-        if my_scope_setttings.level < self.minimal_sharing_level:
-            return False
-
-        return True
- 
     def is_authorized(self, request, object=None):
         print "is authorized?"
         _authorized = True
@@ -180,11 +157,11 @@ class PDSAuthorization(Authorization):
         datastore_owner, ds_owner_created = Profile.objects.get_or_create(uuid = datastore_owner_uuid)
 
         #TODO: default values for pupose and group should be standardized and placed in a setting file.
-        self.purpose, purpose_created = Purpose.objects.get_or_create(name=self.purpose_name, datastore_owner=datastore_owner)
+        self.purpose, purpose_created = Purpose.objects.get_or_create(name=self.purpose_name)
         if purpose_created:
             self.purpose.save()
 
-        self.scope, scope_created = Scope.objects.get_or_create(name=self.resource_scope_name, datastore_owner=datastore_owner)
+        self.scope, scope_created = Scope.objects.get_or_create(name=self.resource_scope_name)
         if scope_created:
             self.scope.save()
 
@@ -195,10 +172,11 @@ class PDSAuthorization(Authorization):
 	    userinfo, client_re = self.get_userinfo_from_token(token,datastore_owner_uuid, datastore_owner)
 	    print "calling trust wrapper"
             #_authorized = self.trustWrapper(datastore_owner, client_re)
-            _authorized = self.trustWrapper2(datastore_owner_uuid, client_re)
+            _authorized = self.trustWrapper(datastore_owner_uuid, self.requester_uuid, client_re)
 	    print "trust wrapper result: ", _authorized
         except Exception as ex:
             print "failed to get userinfo from token"
+            print ex
             _authorized = False
          
         # Result will be the uuid of the requesting party
@@ -229,6 +207,7 @@ class PDSAuthorization(Authorization):
         return _authorized
 
 
+# authorization = PDSAuthorization(scope = "funf_write", audit_enabled = True, minimal_sharing_level = 1)
     def __init__(self, scope, audit_enabled = True, minimal_sharing_level = 0, purpose_name = "trustframework"):
         self.resource_scope_name = scope
         self.audit_enabled = audit_enabled
