@@ -43,7 +43,7 @@ from tastypie import fields
 from tastypie.authorization import Authorization
 from tastypie.validation import Validation
 from oms_pds.tastypie_mongodb.resources import MongoDBResource, Document
-from oms_pds.pds.models import AuditEntry, Profile, SharingLevel, Role, Purpose, Scope
+from oms_pds.pds.models import AuditEntry, Profile, SharingLevel, Role, Purpose, Scope, Answer
 #from oms_pds.mtl_pds.models import Sms, MTLUser, Cluster, Timeslot, Poilabel, Poi, Userpoi, Feedback, Point, CallLog, RunningApp, Bluetooth
 from django.db import models
 
@@ -77,11 +77,12 @@ class FunfConfigResource(MongoDBResource):
         object_class = Document
         collection = "funfconfig" # collection name
 
-class AnswerResource(MongoDBResource):
-    id = fields.CharField(attribute="_id", help_text='A guid identifier for an answer entry.')
-    key = fields.CharField(attribute="key", help_text='A unique string to identify each answer.', null=False, unique=True)
+class AnswerResource(ModelResource):
+#    id = fields.CharField(attribute="_id", help_text='A guid identifier for an answer entry.')
+#    key = fields.CharField(attribute="key", help_text='A unique string to identify each answer.', null=False, unique=True)
+#    minimal_sharing_level = fields.IntegerField(attribute="minimal_sharing_level", help_text='A unique string to identify each answer.', null=False)
 #    data = fields.ToManyField('oms_pds.pds.api.resources.SocialHealthResource', 'socialhealth_set', related_name='realityanalysis')
-    value = fields.DictField(attribute="data", help_text='A json blob of answer data.', null=True, )
+#    value = fields.DictField(attribute="value", help_text='A json blob of answer data.', null=True, )
 
     def dehydrate(self, bundle):
         # Since there's no backing model here, tastypie for some reason doesn't fill in the necessary fields on the data
@@ -91,18 +92,26 @@ class AnswerResource(MongoDBResource):
 	print self.Meta.authorization.scopes
 	
 	if not bundle.data['key'] in self.Meta.authorization.scopes:
-	    print "removing", bundle.data
+	    print "removing, inadequate scope", bundle.data
+            # If the client doesn't have access to this scope, return None
 	    return None
+        elif bundle.data['minimal_sharing_level'] > self.Meta.authorization.personal_sharing_level:
+	    print "removing, inadequate sharing level", bundle.data
+            print "personal_sharing_level", self.Meta.authorization.personal_sharing_level
+            print "minimal sharing level", bundle.data['minimal_sharing_level']
+            # If the minimal sharing level isn't met, return None
+            return None
 	print "next"
 
         return bundle
     
     class Meta:
+        queryset = Answer.objects.all()
         resource_name = "answer"
         list_allowed_methods = ["delete", "get", "post"]
         help_text='resource help text...'
 #        authentication = OAuth2Authentication("funf_write")
-        authorization = PDSAuthorization(scope = "funf", audit_enabled = True, minimal_sharing_level = 1)
+        authorization = PDSAuthorization(scope = "funf", audit_enabled = True, minimal_sharing_level = 0)
         object_class = Document
         collection = "answer" # collection name
 

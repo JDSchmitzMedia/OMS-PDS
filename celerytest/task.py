@@ -32,7 +32,31 @@
 
 
 from celery import task
+from oms_pds.pds.models import Answer 
 
-@task(name='tasks.add')
-def add(x, y):
-    return x + y
+@task(name='tasks.focus')
+def focus():
+    print "running focus task"
+    answer, is_created = Answer.object.get_or_create(key="focus")
+    answer.minimal_sharing_level=0
+    answer.value="4.5"
+    answer.save()
+    return True 
+
+@task(name='tasks.activity')
+def activity():
+    print "running activity task"
+    answer, is_created = Answer.object.get_or_create(key="activity")
+    answer.minimal_sharing_level=0
+    answer.value="4.4"
+    answer.save()
+    return True 
+
+@task(name='tasks.social')
+def social():
+    print "running social task"
+    answer, is_created = Answer.object.get_or_create(key="social")
+    answer.minimal_sharing_level=0
+    answer.value="4.3"
+    answer.save()
+    return True 

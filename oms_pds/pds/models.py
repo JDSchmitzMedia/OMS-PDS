@@ -51,6 +51,11 @@ class Profile(models.Model):
     isinit = models.BooleanField(default=False)
 admin.site.register(Profile)
 
+class Answer(models.Model):
+    key = models.CharField(max_length=120)
+    value = models.CharField(max_length=120)
+    minimal_sharing_level = models.IntegerField()
+
 class Role(models.Model):
     ''' @name : The user defined name of the role
          '''

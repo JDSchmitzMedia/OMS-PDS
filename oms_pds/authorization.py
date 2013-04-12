@@ -44,6 +44,7 @@ class PDSAuthorization(Authorization):
     scopes = []
     requester_uuid = ""
     minimal_sharing_level = 0
+    personal_sharing_level = 0
     resource_scope_name = None
     
     def requester(self):
@@ -139,6 +140,7 @@ class PDSAuthorization(Authorization):
         if role.issharing == False: 
            print "not sharing with this role", role.name
            return False
+           self.personal_sharing_level = pas.sharing_level
         if pas.sharing_level < self.minimal_sharing_level: 
            print "personal answer sharing level is insufficient", pas.sharing_level
            return False
