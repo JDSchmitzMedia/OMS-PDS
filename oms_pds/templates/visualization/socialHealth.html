@@ -1,0 +1,124 @@
+<!--{% extends "backboneLayout.html" %}-->
+
+
+{% block more_scripts %}
+
+  <script src="{{ STATIC_URL }}js/jQuery.ui.datepicker.js"></script>
+     <link rel="stylesheet" href="{{ STATIC_URL}}css/jquery.ui.datepicker.mobile.css" /> 
+     <link href='http://fonts.googleapis.com/css?family=Open+Sans:600' rel='stylesheet' type='text/css'>
+  <script src="{{ STATIC_URL }}js/jquery.ui.datepicker.mobile.js"></script>
+      
+<script src="http://d3js.org/d3.v2.js"></script>
+
+<script>
+    ANSWERLIST_API_URL = "{% url api_dispatch_list api_name="personal_data" resource_name="answerlist" %}";
+    ANSWERLIST_KEY = "socialhealth";
+</script>
+
+<script src="{{ STATIC_URL }}js/answerList.js"></script>
+<!--
+<script src="{{ STATIC_URL }}js/answerRating.js"></script>
+-->
+<script>
+$(function () {
+	window.radialApp = new SocialHealthRadialView();
+//	window.answerRating = new AnswerRatingStarView({ el: "#answer_rating", key: "SocialHealthAnswerRating" });
+//    window.activityRating = new AnswerRatingStarView({ el: "#activity_rating", key: "SelfReportedActivityRating" });
+//    window.socialRating = new AnswerRatingStarView({ el: "#social_rating", key: "SelfReportedSocialRating" });
+//    window.focusRating = new AnswerRatingStarView({ el: "#focus_rating", key: "SelfReportedFocusRating" });
+	$(window).bind("resize", function () { radialApp.render(); });
+});
+</script>
+
+{% endblock %}
+
+{% block content %}
+<div id="header">Reality Analysis<div id="date">4/16/2013</div></div>
+<div id="scores" class="column">
+    <div class="group_header"></div>
+    <div class="user_header"></div>
+    <div class="score">
+    </div>
+    <div class="score">
+        <div id="activity">
+            <div class="header"></div>
+            <div id="user" class="value">null</div>
+            <div id="group" class="value">null</div>
+        </div>
+    </div>
+    <div class="score">
+        <div id="focus">
+            <div class="header"></div>
+            <div id="user" class="value">null</div>
+            <div id="group" class="value">null</div>
+        </div>
+    </div>
+    <div class="score">
+        <div id="social">
+            <div class="header"></div>
+            <div id="user" class="value">null</div>
+            <div id="group" class="value">null</div>
+        </div>
+    </div>
+</div>
+<div id="mainContent" class="column">
+    <div id="heatmapArea"></div>
+</div>
+<div id="contacts">
+    <div class="header"></div>
+<!--    <div class="contact">
+        <div class="contact-triangle"></div>
+        <div class="contact-icon"></div>
+        <div class="username">
+        </div>
+    </div>
+    <div class="contact">
+        <div class="contact-triangle"></div>
+        <div class="contact-icon"></div>
+        <div class="username">
+        </div>
+    </div>
+    <div class="contact">
+        <div class="contact-triangle"></div>
+        <div class="contact-icon"></div>
+        <div class="username">
+        </div>
+    </div>
+    <div class="contact">
+        <div class="contact-triangle"></div>
+        <div class="contact-icon"></div>
+        <div class="username">
+        </div>
+    </div>
+    <div class="contact">
+        <div class="contact-triangle"></div>
+        <div class="contact-icon"></div>
+        <div class="username">
+        </div>
+    </div>
+    <div class="contact">
+        <div class="contact-triangle"></div>
+        <div class="contact-icon"></div>
+        <div class="username">
+        </div>
+    </div>
+    <div class="contact">
+        <div class="contact-triangle"></div>
+        <div class="contact-icon"></div>
+        <div class="username">
+        </div>
+    </div>
+    <div class="contact">
+        <div class="contact-triangle"></div>
+        <div class="contact-icon"></div>
+        <div class="username">
+        </div>
+    </div>-->
+</div>
+<!--
+<div class="answer-rating"><h2>How accurate is this?</h2><div id="answer_rating"></div></div>
+<div class="answer-rating"><h2>How active are you?</h2><div id="activity_rating"></div></div>
+<div class="answer-rating"><h2>How social are you?</h2><div id="social_rating"></div></div>
+<div class="answer-rating"><h2>How focused are you?</h2><div id="focus_rating"></div></div>
+-->
+{% endblock %}

@@ -1,0 +1,55 @@
+[
+    {
+        "user":"Group",
+        "color":"none",
+        "issharing":true, 
+        "photo":"/static/img/bbc_demo/Group_Gray_thumb.png",
+        "locations":
+        [
+            {"timestamp":1316035121, "lat": 42.5363, "lng":-71.044, "count": 1},
+            {"timestamp":1316035221, "lat": 42.5463, "lng":-71.044, "count": 1},
+            {"timestamp":1316035321, "lat": 42.5363, "lng":-71.144, "count": 1},
+            {"timestamp":1316035421, "lat": 42.5383, "lng":-71.044, "count": 1},
+            {"timestamp":1316035121, "lat": 42.4363, "lng":-71.044, "count": 1},
+            {"timestamp":1316037421, "lat": 42.3383, "lng":-71.044, "count": 1},
+            {"timestamp":1316035121, "lat": 42.5263, "lng":-71.144, "count": 1},
+            {"timestamp":1316035221, "lat": 42.5363, "lng":-71.144, "count": 1},
+            {"timestamp":1316035321, "lat": 42.5263, "lng":-71.244, "count": 1},
+            {"timestamp":1316035421, "lat": 42.5283, "lng":-70.944, "count": 1},
+            {"timestamp":1316037421, "lat": 42.6283, "lng":-70.944, "count": 1}
+        ]
+    },
+    {
+        "user":"Kevin",
+        "color":"red",
+        "color_fill":"#FF0000",
+        "issharing":true, 
+        "photo":"/static/img/bbc_demo/KevinFong_thumbnail.jpg",
+        "locations":[{"timestamp":1316035121, "lat": 42.5363, "lng":-71.044, "count": 1},{"timestamp":1316035221, "lat": 42.5463, "lng":-71.044, "count": 1},{"timestamp":1316035321, "lat": 42.5363, "lng":-71.144, "count": 1},{"timestamp":1316035421, "lat": 42.5383, "lng":-71.044, "count": 1},{"timestamp":1316037421, "lat": 42.3383, "lng":-71.044, "count": 1}]
+    }, 
+    {
+        "user":"Sandy", 
+        "color":"green",
+        "color-fill":"#9ACD32",
+        "issharing":true, 
+        "photo":"/static/img/bbc_demo/Sandy_thumbnail.jpg",
+        "locations":[{"timestamp":1316035121, "lat": 42.5263, "lng":-71.144, "count": 1},{"timestamp":1316035221, "lat": 42.5363, "lng":-71.144, "count": 1},{"timestamp":1316035321, "lat": 42.5263, "lng":-71.244, "count": 1},{"timestamp":1316035421, "lat": 42.5283, "lng":-70.944, "count": 1},{"timestamp":1316037421, "lat": 42.6283, "lng":-70.944, "count": 1}]
+    },
+    {
+        "user":"Todd", 
+        "color":"green",
+        "color-fill":"#9ACD32",
+        "issharing":true, 
+        "photo":"/static/img/bbc_demo/Todd_thumbnail.jpg",
+        "locations":[{"timestamp":1316035121, "lat": 42.4363, "lng":-71.044, "count": 1}]
+    },
+    {
+        "user":"Jeff", 
+        "color":"none",
+        "issharing":false, 
+        "photo":"/static/img/bbc_demo/locked.png",
+        "locations":[{"timestamp":1316035121, "lat": 42.4363, "lng":-71.044, "count": 1}]
+    }
+]
+
+

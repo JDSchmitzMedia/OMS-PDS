@@ -1,10 +1,11 @@
-{% extends "backboneLayout.html" %}
+<!--{% extends "backboneLayout.html" %}-->
 
 
 {% block more_scripts %}
 
   <script src="{{ STATIC_URL }}js/jQuery.ui.datepicker.js"></script>
      <link rel="stylesheet" href="{{ STATIC_URL}}css/jquery.ui.datepicker.mobile.css" /> 
+     <link href='http://fonts.googleapis.com/css?family=Open+Sans:600' rel='stylesheet' type='text/css'>
   <script src="{{ STATIC_URL }}js/jquery.ui.datepicker.mobile.js"></script>
       
 <script src="http://d3js.org/d3.v2.js"></script>
@@ -16,25 +17,131 @@
 
 <script src="{{ STATIC_URL }}js/answerList.js"></script>
 <script src="{{ STATIC_URL }}js/socialHealthRadial.js"></script>
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script src="{{ STATIC_URL }}js/heatmap.js"></script>
+<script src="{{ STATIC_URL }}js/heatmap-gmaps.js"></script>
+<script src="{{ STATIC_URL }}js/socialHealthMap.js"></script>
+
+<!-- BBC Demo Date+Time Picker required a later version of jquery than the current app had(which is inclueded in base.html).  NEEDS CLEANUP-->
+<link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.23/themes/smoothness/jquery-ui.css" type="text/css" media="all" />
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.23/jquery-ui.min.js"></script>
+<script src="{{ STATIC_URL }}js/jquery-ui-timepicker-addon.js"></script>
+<!--<script src="{{ STATIC_URL }}js/socialHealthPath.js"></script>-->
+
 <!--
 <script src="{{ STATIC_URL }}js/answerRating.js"></script>
 -->
 <script>
 $(function () {
-	window.radialApp = new SocialHealthRadialView();
+	window.radialApp = new SocialHealthRadialView(window.innerHeight,window.innerWidth, "#radial_chart", 150, -300, 50,1.0);
+	window.radialApp = new SocialHealthRadialView(window.innerHeight-250,window.innerWidth-250, "#radial_chart_small", 100, -485, 20, 0.75);
 //	window.answerRating = new AnswerRatingStarView({ el: "#answer_rating", key: "SocialHealthAnswerRating" });
 //    window.activityRating = new AnswerRatingStarView({ el: "#activity_rating", key: "SelfReportedActivityRating" });
 //    window.socialRating = new AnswerRatingStarView({ el: "#social_rating", key: "SelfReportedSocialRating" });
 //    window.focusRating = new AnswerRatingStarView({ el: "#focus_rating", key: "SelfReportedFocusRating" });
 	$(window).bind("resize", function () { radialApp.render(); });
 });
+
+function swap(showelement, hideelement){
+    $("#radial_chart")[0].style.display="none";
+    $("#heatmapArea")[0].style.display="none";
+//    $("#pathmapArea")[0].style.display="none";
+    $(showelement)[0].style.display="block";
+    if(showelement == "#radial_chart")
+    {
+        $("#scores").attr("class", "column");
+    }
+    else if(showelement == "#heatmapArea")
+    {
+        $("#scores").attr("class", "column hide");
+    } 
+    return true;
+}
+function toggle(element){
+  var oldclass = $(element).attr("class");
+  if(oldclass.indexOf("hide") !== -1)
+  {
+    newclass = oldclass.replace("hide","");
+  }
+  else
+  {
+    newclass = oldclass.replace("","hide");
+  }
+  $(element).attr("class",newclass);
+}
+
+$(document).ready(function(){
+  $('.datetimepicker').datetimepicker({});
+});
+
 </script>
 
 {% endblock %}
 
 {% block content %}
+<div id="header">Reality Analysis
+<a href="#" onclick="swap('#radial_chart')" data-rel="popup" data-role="button" data-inline="true" data-transition="fade">Social Health Triangle</a>
+<a href="#" onclick="swap('#heatmapArea');" data-rel="popup" data-role="button" data-inline="true" data-transition="fade">My Locations</a>
+<a href="#" onclick="markCurrentLocation()" data-rel="popup" data-role="button" data-inline="true" data-transition="fade">Where Am I</a>
+<div id="picker" class="hide" ><form>
+      Start Time
+      <input class="datetimepicker" id="start_time" name="start_time" type="text" size=25 />
+       
+      End Time
+      <input class="datetimepicker" id="end_time" name="end_time" type="text" size=25 />
+</form>
+</div>
+</a>
+<!--<img style="width:50px;height:50px;" src="/static/img/bbc_demo/Kevin Fong.jpg">-->
 
-<div id="radial_chart"></div>
+    <div id="date" onclick="toggle('#picker');" >4/23/2013</div>
+</div>
+<div id="scores" class="column hide">
+    <div class="group_header"></div>
+    <div class="user_header"></div>
+    <div class="score">
+    </div>
+    <div class="score">
+        <div id="activity">
+            <div class="header"></div>
+            <div id="user" class="value">null</div>
+            <div id="group" class="value">null</div>
+        </div>
+    </div>
+    <div class="score">
+        <div id="focus">
+            <div class="header"></div>
+            <div id="user" class="value">null</div>
+            <div id="group" class="value">null</div>
+        </div>
+    </div>
+    <div class="score">
+        <div id="social">
+            <div class="header"></div>
+            <div id="user" class="value">null</div>
+            <div id="group" class="value">null</div>
+        </div>
+    </div>
+</div>
+<div class="column" id="mainContent">
+    <div id="heatmapArea"></div>
+    <div id="radial_chart"></div>
+</div>
+<div id="contacts">
+<!--    <div class="contact">
+        <div class="contact-triangle green"></div>
+        <div class="contact-icon"></div>
+        <div class="username">
+        </div>
+    </div>-->
+</div>
+<div id="popup" class="hide">
+    <div id="radial_chart_small"></div>
+</div>
+<div id="icon_toolbar">
+<a style="width=:100%;height:100%;" href="#" onclick="toggle('#popup');"><img style="width:30px;height:30px;" src="/static/img/bbc_demo/Shape 7 copy 11.png"></a>
+</div>
 <!--
 <div class="answer-rating"><h2>How accurate is this?</h2><div id="answer_rating"></div></div>
 <div class="answer-rating"><h2>How active are you?</h2><div id="activity_rating"></div></div>

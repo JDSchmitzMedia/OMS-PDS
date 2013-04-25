@@ -1,0 +1,19 @@
+<style>
+
+div
+{
+transition: width 2s;
+-webkit-transition: width 2s; /* Safari */
+}
+
+div:hover
+{
+width:300px;
+}
+
+</style>
+
+<body>
+
+<div>Test><div>
+</body>

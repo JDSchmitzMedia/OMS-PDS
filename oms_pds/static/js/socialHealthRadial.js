@@ -7,12 +7,105 @@ window.handleTabChange = function (dimension, tabNum) {
 	return true;
 };
 
+function select_circle(s){
+    
+    var categories = ["social","activity","focus"];
+
+    for(var i = 0; i<categories.length; i++)
+    {
+        if(s == categories[i])
+        {
+            d3.selectAll("#"+categories[i]+"_circle")
+                .attr("xlink:href", "/static/img/bbc_demo/"+categories[i]+"_circle_orange.png");
+            d3.selectAll(".score div#"+categories[i])
+                .style("color", "white");
+            d3.selectAll(".score div#"+categories[i]+" div#user")
+                .style("background-color", "#fffff");
+        }
+        else
+        {
+            d3.selectAll("#"+categories[i]+"_circle")
+                .attr("xlink:href", "/static/img/bbc_demo/"+categories[i]+"_circle.png");
+            d3.selectAll(".score div#"+categories[i])
+                .style("color", "gray")
+                .style("background-color", "#F5F5F5");
+        }
+    }
+};
+
+function update_scores(userData, averageData){
+    // get averages from the high low data passed in, and store it locally.  This is a total hack for a demo.
+    var averages = { "activity" : 0, "social" : 0, "focus" : 0 };
+    for(var i = 0; i<averageData.length; i++)
+    {
+        averages[averageData[i].key] += averageData[i].value;
+    }
+    averages["activity"]=averages["activity"]/2;
+    averages["focus"]=averages["focus"]/2;
+    averages["social"]=averages["social"]/2;
+    for(var i = 0; i<userData.length; i++)
+    {
+        d3.selectAll(".score div#"+userData[i].key+" div#user")
+            .html(Math.round(userData[i].value));
+
+        d3.selectAll(".score div#"+userData[i].key+" div#group")
+            .html(Math.round(averages[userData[i].key]));
+    }
+}
+
+function click(d){
+    select_circle(d);
+    if(d == "social")
+    {
+        d3.selectAll("#social")
+            .style("background", "#ff9f37");
+        d3.selectAll(".axis")
+   	    .style("opacity", function(d,i) {
+		if(i == 2)
+		{return "1.0";} 
+		else
+		{return "0.0";}
+       	});
+    }
+    else if(d == "activity")
+    {
+        d3.selectAll("#activity")
+            .style("background", "#ff9f37");
+        d3.selectAll(".axis")
+   	    .style("opacity", function(d,i) {
+		if(i == 0)
+		{return "1.0";} 
+		else
+		{return "0.0";}
+	});
+    }
+    else if(d == "focus")
+    {
+        d3.selectAll("#focus")
+            .style("background", "#ff9f37");
+        d3.selectAll(".axis")
+   	    .style("opacity", function(d,i) {
+		if(i == 1)
+		{return "1.0";} 
+		else
+		{return "0.0";}
+	});
+    }
+};
+
 window.SocialHealthRadialView = Backbone.View.extend({
 	el: "#triangle",
 	
-	initialize: function () {
+	initialize: function (height, width, chartElement, heightPadding, widthPadding, iconSize, iconFactor) {
 		_.bindAll(this, "render");
 		this.answerLists = new AnswerListCollection();
+		this.height = height;
+		this.width = width;
+		this.heightPadding = heightPadding;
+		this.widthPadding = widthPadding;
+		this.chartElement = chartElement;
+		this.iconFactor = iconFactor;
+		this.iconSize = iconSize;
 		this.answerLists.bind("reset", this.render);
 		this.answerLists.fetch();
 	},
@@ -21,26 +114,34 @@ window.SocialHealthRadialView = Backbone.View.extend({
 		if (this.graph) {
 			this.graph.remove();
 		}
-		
+	
+ 		//populate data variable with data from server	
 		var data = this.answerLists.models[0].attributes["value"];
+                
 		// Note: we're subtracting an extra 48 from height to allow for the voting stars below it
-		var viewHeight = window.innerHeight - 48;
-		var width = window.innerWidth - 5,
-		height = viewHeight - 5,
+//		var viewHeight = window.innerHeight - 48;
+//		var width = window.innerWidth - 5,
+		var viewHeight = this.height - 48;
+		var width = this.width - 5,
+		height = viewHeight - 200,
 		maxRadius = Math.min(height, width) / 2 - 10;
 		
 		var z = d3.scale.category20();
 		var whiteColor = d3.rgb(255,255,255);
 		var redColor = d3.rgb(200,100,50);
 		var newColor = d3.rgb(100,100,100);
-		var pink = d3.rgb(238,98,226);
-		var lightblue = d3.rgb(122,205,247);
+//		var pink = d3.rgb(255,99,71);
+		var pink = d3.rgb(255,204,0);
+		var lightblue = d3.rgb(74,172,204);
 		
 		// Warning: the code below assumes that both average and user-specific sets are returned. If the user is not sharing, 
 		// this will not be the case, and will need to be handled eventually.
 		
 		var averageData = _.filter(data, function (d) { return d.layer.indexOf("average") != -1; });
 		var userData = _.filter(data, function (d) { return d.layer == "User";});
+		console.log(userData);
+                update_scores(userData, averageData);
+
 
 		// Handle the fact that our data is in different layers (ie; "User", "AverageLow", "AverageHigh")		
 		// nest - essentially a "group by": gets us a mapping from a layer to the associated objects with that layer 
@@ -58,7 +159,10 @@ window.SocialHealthRadialView = Backbone.View.extend({
 		
 		// Now that we got the stacking out of the way, we know the inner and outer radius for the average layer
 		// To simplify things (and optimize a bit), let's throw out the averageLow and replace it with the user data
-		layers[0] = {key: "User", values: userData };
+		layers[0] = {key: "User", color: personalData[1].color_fill, values: userData };
+//		layers[1] = {key: "User 2", values: userData };
+		layers[2] = {key: "Sandy", color: "9ACD32", values: [{"key": "activity", "layer": "Sandy", "value": 5.303142231732503}, {"key": "social", "layer": "Sandy", "value": 6.81604961450666}, {"key": "focus", "layer": "Sandy", "value": 6.134426320220927}] };
+		layers[3] = {key: "Todd", color: "9ACD32", values: [{"key": "activity", "layer": "Todd", "value": 7.303142231732503}, {"key": "social", "layer": "Todd", "value": 5.81604961450666}, {"key": "focus", "layer": "Todd", "value": 6.134426320220927}] };
 		//layers = layers.splice(1,1);
 
 		// Since all layers have the same dimensions, using the first one to pull the dimension names is fine
@@ -78,13 +182,15 @@ window.SocialHealthRadialView = Backbone.View.extend({
 			.innerRadius(function(d) { return radius((d.y0)? d.y0: 0); })
 			.outerRadius(function(d) { return radius(d.value); });
 
-		var heightPadding = 20;
-		var widthPadding = 2;
+		//var heightPadding = 200;
+		//var widthPadding = -300;
+		var heightPadding = this.heightPadding;
+		var widthPadding = this.widthPadding;
 		var chartCenter = [ ((width / 2) + widthPadding), ((height / 2) + heightPadding)];
 		// Adjusted height is essentially the center plus the height of the graph below the center (lines at 30 degree angles = 0.5 height)
 		var adjustedHeight = chartCenter[1] * 1.5 + heightPadding;
 
-		var chartSvg = d3.select("#radial_chart").append("svg")
+		var chartSvg = d3.select(this.chartElement).append("svg")
 			.attr("width", width)
 			.attr("height", adjustedHeight);
 		
@@ -128,36 +234,120 @@ window.SocialHealthRadialView = Backbone.View.extend({
 		// Center the chart itself on the page
 		chartSvg = chartSvg.append("g")
 			.attr("transform", "translate("+chartCenter[0]+","+chartCenter[1]+")");
+
+                // Draw the background triangle 
+                var backgroundWidth=height/1.75;
+                chartSvg.append('path')
+                        .attr('d', function(d) { 
+                             var x = 0, y = -height/1.5;
+                             return 'M ' + x +' '+ y + ' l '+backgroundWidth+' '+height+' l -'+backgroundWidth*2+' 0 z';
+                        })
+                        .style("stroke","white")
+                        .style("opacity","0.5")
+                        .style("fill","white");
 	
 		// Draw the layers
 		chartSvg.selectAll(".layer")
 			.data(layers)
 			.enter().append("path")
 			.attr("class", "layer")
+                        .attr("id", function(d){ return ""+d.key;})
 			.attr("d", function(d) { return area(d.values); })
 			.style("fill",
-		        function(d, i) { return (d.key == "User")? pink:lightblue; })
-			.style("opacity", 0.6);
+		        function(d, i) { if(d.key =="averageHigh"){return lightblue;}else{return d.color;} })
+			.style("display",
+		        function(d, i) { if(d.key =="User"){return; }else if(d.key =="averageHigh"){return;}else{return "none";} })
+			.style("opacity", 0.5);
 			
+                var backgroundWidth=height/3.5;
+                // Draw the upper left background prism
+                chartSvg.append('path')
+                        .attr('d', function(d) { 
+                             var x = 0, y = -height/1.5;
+                             return 'M ' + x +' '+ y + ' l 0 '+height/1.5+' l -'+backgroundWidth*2+' '+height/3+' z';
+                        }) .style("stroke","None")
+                        .style("opacity","0.4")
+                        .style("fill","white");
+                
+                // Draw the upper right background prism
+                chartSvg.append('path')
+                        .attr('d', function(d) { 
+                             var x = 0, y = -height/1.5;
+                             return 'M ' + x +' '+ y + ' l 0 '+height/1.5+' l '+backgroundWidth*2+' '+height/3+' z';
+                        })
+                        .style("stroke","None")
+                        .style("opacity","0.2")
+                        .style("fill","white");
+	
+                // Draw the lower background prism
+                chartSvg.append('path')
+                        .attr('d', function(d) { 
+                             var x = 0, y = 0;
+                             return 'M ' + x +' '+ y + ' l -'+backgroundWidth*2+' '+height/3+' l '+backgroundWidth*4+' 0 z';
+                        })
+                        .style("stroke","None")
+                        .style("opacity","0.0")
+                        .style("fill","white");
+
+                var dataset = [ "activity", "focus", "social" ];
+
+                var circles = chartSvg.selectAll("circle")
+                 .data(dataset)
+                 .enter();
+
+		// Create activity circle label
+                circles.append("svg:image")
+                         .attr("xlink:href", "/static/img/bbc_demo/activity_circle.png")
+                         .attr("id", "activity_circle")
+                         .attr("width", this.iconSize+"px")
+                         .attr("height", this.iconSize+"px")
+                         .attr("x",-(this.iconSize/2))
+//                         .attr("y",-backgroundWidth*2.7)
+                         .attr("y",-(height/1.5+this.iconSize)*this.iconFactor)
+			 .on("mouseover", function(d){ return click("activity");});
+	
+		// Create focus circle label
+                circles.append("svg:image")
+                         .attr("xlink:href", "/static/img/bbc_demo/focus_circle.png")
+                         .attr("id", "focus_circle")
+                         .attr("width", this.iconSize+"px")
+                         .attr("height", this.iconSize+"px")
+                         .attr("x",(2*backgroundWidth)*(this.iconFactor))
+                         .attr("y",backgroundWidth*1.125*this.iconFactor)
+			 .on("mouseover", function(d){ return click("focus");});
+
+		// Create social circle label
+                circles.append("svg:image")
+                         .attr("xlink:href", "/static/img/bbc_demo/social_circle.png")
+                         .attr("id", "social_circle")
+                         .attr("width", this.iconSize+"px")
+                         .attr("height", this.iconSize+"px")
+                         .attr("x",-(backgroundWidth*2+this.iconSize)*this.iconFactor)
+                         .attr("y",backgroundWidth*1.125*this.iconFactor)
+			 .on("mouseover", function(d){ return click("social");});
+	
 		// create Axis		
 		chartSvg.selectAll(".axis")
-			.data(dimensions)
-			.enter().append("g")
-			.attr("class", "axis")
-			.attr("transform", function(d, i) { return "rotate(" + angle(d) + ")"; })
+			.data(dimensions) .enter().append("g") .attr("class", "axis")
+ 			.attr("transform", function(d, i) { return "rotate(" + angle(d) + ")"; })
 			.on("click", function (d,i) { return handleTabChange(d,i); })
 			.call(d3.svg.axis()
 				.scale(radius.copy().range([-10, -maxRadius]))
 				.ticks(5)
 				.orient("left"))
-				.append("text")
-				.attr("y", -maxRadius - 10)
-				.attr("text-anchor", "middle")
-				.text(function(d) { return d; })
-				.attr("style","font-size:16px;")
-				.style("fill", function(d,i) {
-					return "black"; // Insert means of determining unhealthy value here
-				});
+//				.append("text")
+//				.attr("y", -maxRadius - 10)
+//				.attr("text-anchor", "middle")
+//				.text(function(d) { return d; })
+//				.attr("style","font-size:16px;")
+//				.style("fill", function(d,i) {
+//					return "black"; // Insert means of determining unhealthy value here
+//				})
+				;
+
 	
 	}
+
+//close call to local .json file
+//                });	
 });
