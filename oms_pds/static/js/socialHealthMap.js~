@@ -226,7 +226,7 @@ window.onload = function(){
     };
  
 	window.radialApp = new SocialHealthRadialView(window.innerHeight,window.innerWidth, "#radial_chart", 150, -300, 50,1.0);
-	window.radialApp = new SocialHealthRadialView(window.innerHeight-300,window.innerWidth-300, "#radial_chart_small", 100, -450, 20, 0.75);
+	window.radialApp = new SocialHealthRadialView(window.innerHeight-300,window.innerWidth-300, "#radial_chart_small", 100, -420, 20, 0.75);
 
 	$(window).bind("resize", function () { radialApp.render(); });
 };

@@ -80,6 +80,7 @@ div.column#mainContent div#pathmapArea {
 div.column#mainContent div#radial_chart {
   background-image:url("../img/bbc_demo/Shape 21.png");
   background-size:1000px 1000px;
+  overflow: hidden;
   width: 950px;
   height: 800px;
   display: none;

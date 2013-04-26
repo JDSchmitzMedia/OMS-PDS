@@ -33,7 +33,7 @@
 <script src="{{ STATIC_URL }}js/answerRating.js"></script>
 -->
 <script>
-//$(function () {
+$(function () {
 //	window.radialApp = new SocialHealthRadialView(window.innerHeight,window.innerWidth, "#radial_chart", 150, -300, 50,1.0);
 //	window.radialApp = new SocialHealthRadialView(window.innerHeight-300,window.innerWidth-300, "#radial_chart_small", 100, -380, 20, 0.75);
 //	window.answerRating = new AnswerRatingStarView({ el: "#answer_rating", key: "SocialHealthAnswerRating" });
@@ -41,7 +41,7 @@
 //    window.socialRating = new AnswerRatingStarView({ el: "#social_rating", key: "SelfReportedSocialRating" });
 //    window.focusRating = new AnswerRatingStarView({ el: "#focus_rating", key: "SelfReportedFocusRating" });
 //	$(window).bind("resize", function () { radialApp.render(); });
-//});
+});
 
 function swap(showelement, hideelement){
     $("#radial_chart")[0].style.display="none";

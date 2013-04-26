@@ -166,7 +166,6 @@ window.SocialHealthRadialView = Backbone.View.extend({
 		layers[4] = {key: "Henrik", color: "9ACD32", values: [{"key": "activity", "layer": "Henrik", "value": 6.126601235157298}, {"key": "social", "layer": "Henrik", "value": 7.434995850439565}, {"key": "focus", "layer": "Henrik", "value": 8.005624549193879}] };
 		layers[5] = {key: "Brian", color: "9ACD32", values: [{"key": "activity", "layer": "Brian", "value": 6.025471814621179}, {"key": "social", "layer": "Brian", "value": 6.272033444796837}, {"key": "focus", "layer": "Brian", "value": 7.330916878114618}] };
 		layers[6] = {key: "Yves-Alexandre", color: "9ACD32", values: [{"key": "activity", "layer": "Yves-Alexandre", "value": 5.816343705284859}, {"key": "social", "layer": "Yves-Alexandre", "value": 4.767257149820975}, {"key": "focus", "layer": "Yves-Alexandre", "value": 8.693486957499326}] };
-		layers[7] = {key: "Xeno", color: "9ACD32", values: [{"key": "activity", "layer": "Xeno", "value": 4.703211467391147}, {"key": "social", "layer": "Xeno", "value": 5.201585777356515}, {"key": "focus", "layer": "Xeno", "value": 6.459431618637298}] };
 		
 		//layers = layers.splice(1,1);
 
